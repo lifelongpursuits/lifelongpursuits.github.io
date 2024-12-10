@@ -222,3 +222,82 @@ document.addEventListener('DOMContentLoaded', function() {
 		});
 	}, 500);  // 500ms delay to ensure DOM is fully loaded
 });
+
+// Duolingo Streak Functionality
+function updateDuolingoStreak() {
+    // Initial streak start date and base streak
+    const initialStreakStartDate = new Date('2024-12-10');
+    const initialStreak = 43;
+    
+    // Get today's date
+    const today = new Date();
+    
+    // Calculate days since initial streak start
+    const daysSinceStart = Math.floor((today - initialStreakStartDate) / (1000 * 60 * 60 * 24));
+    
+    // Calculate current streak (start with 43, increment daily after 12/10/2024)
+    const currentStreak = initialStreak + Math.max(0, daysSinceStart);
+    
+    // Create streak display element
+    const streakElement = document.createElement('li');
+    streakElement.classList.add('duolingo-streak-item');
+    
+    // Create image element with fallback
+    const duolingoImg = new Image(40, 40);
+    duolingoImg.src = 'images/icons8-duolingo-logo-32.png';
+    duolingoImg.alt = 'Duolingo';
+    duolingoImg.style.verticalAlign = 'middle';
+    duolingoImg.style.marginRight = '5px';
+    
+    // Add error handling for image
+    duolingoImg.onerror = function() {
+        console.warn('Duolingo logo failed to load. Using text instead.');
+        duolingoImg.style.display = 'none';
+    };
+    
+    streakElement.innerHTML = `
+        <a href="https://www.duolingo.com/profile/TheRealestAlive" target="_blank" class="icon brands fa-duolingo">
+            ${duolingoImg.outerHTML}
+            Duolingo Streak: ${currentStreak} days
+        </a>
+    `;
+    
+    // Find the social icons container
+    const socialIconsContainer = document.querySelector('#footer .icons');
+    
+    if (socialIconsContainer) {
+        // Remove any existing Duolingo streak element
+        const existingStreakElement = socialIconsContainer.querySelector('.icon.brands.fa-duolingo');
+        if (existingStreakElement) {
+            existingStreakElement.remove();
+        }
+        
+        // Insert the new streak element at the beginning of the social icons
+        socialIconsContainer.insertBefore(streakElement, socialIconsContainer.firstChild);
+    }
+}
+
+// Run on page load
+document.addEventListener('DOMContentLoaded', updateDuolingoStreak);
+
+// Schedule daily update at 12 PM EST
+function scheduleStreakUpdate() {
+    const now = new Date();
+    const nextUpdate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0);
+    
+    // If it's already past 12 PM, schedule for next day
+    if (now > nextUpdate) {
+        nextUpdate.setDate(nextUpdate.getDate() + 1);
+    }
+    
+    const timeUntilNextUpdate = nextUpdate - now;
+    
+    setTimeout(() => {
+        updateDuolingoStreak();
+        // Set up recurring daily update
+        setInterval(updateDuolingoStreak, 24 * 60 * 60 * 1000);
+    }, timeUntilNextUpdate);
+}
+
+// Initialize scheduled updates
+scheduleStreakUpdate();
