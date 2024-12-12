@@ -229,11 +229,20 @@ function updateDuolingoStreak() {
     const initialStreakStartDate = new Date('2024-12-10');
     const initialStreak = 43;
     
-    // Get today's date
-    const today = new Date();
+    // Get current date in EST
+    const now = new Date();
+    const estOffset = -5; // EST offset from UTC
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const today = new Date(utc + (3600000 * estOffset));
+    
+    // Set the date to the previous day if it's before 11:59 PM EST
+    const comparisonDate = new Date(today);
+    if (comparisonDate.getHours() < 23 || (comparisonDate.getHours() === 23 && comparisonDate.getMinutes() < 59)) {
+        comparisonDate.setDate(comparisonDate.getDate() - 1);
+    }
     
     // Calculate days since initial streak start
-    const daysSinceStart = Math.floor((today - initialStreakStartDate) / (1000 * 60 * 60 * 24));
+    const daysSinceStart = Math.floor((comparisonDate - initialStreakStartDate) / (1000 * 60 * 60 * 24));
     
     // Calculate current streak (start with 43, increment daily after 12/10/2024)
     const currentStreak = initialStreak + Math.max(0, daysSinceStart);
@@ -277,27 +286,33 @@ function updateDuolingoStreak() {
     }
 }
 
-// Run on page load
-document.addEventListener('DOMContentLoaded', updateDuolingoStreak);
-
-// Schedule daily update at 12 PM EST
+// Schedule updates at 11:59 PM EST
 function scheduleStreakUpdate() {
     const now = new Date();
-    const nextUpdate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0);
+    const estOffset = -5; // EST offset from UTC
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const estNow = new Date(utc + (3600000 * estOffset));
     
-    // If it's already past 12 PM, schedule for next day
-    if (now > nextUpdate) {
+    // Calculate next update time (11:59 PM EST)
+    const nextUpdate = new Date(estNow);
+    nextUpdate.setHours(23, 59, 0, 0);
+    
+    // If it's already past 11:59 PM, schedule for next day
+    if (estNow > nextUpdate) {
         nextUpdate.setDate(nextUpdate.getDate() + 1);
     }
     
-    const timeUntilNextUpdate = nextUpdate - now;
+    const timeUntilNextUpdate = nextUpdate.getTime() - estNow.getTime();
     
     setTimeout(() => {
         updateDuolingoStreak();
-        // Set up recurring daily update
+        // Set up recurring daily update at 11:59 PM EST
         setInterval(updateDuolingoStreak, 24 * 60 * 60 * 1000);
     }, timeUntilNextUpdate);
 }
 
-// Initialize scheduled updates
-scheduleStreakUpdate();
+// Run on page load and initialize scheduled updates
+document.addEventListener('DOMContentLoaded', () => {
+    updateDuolingoStreak();
+    scheduleStreakUpdate();
+});
